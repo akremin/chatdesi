@@ -1,12 +1,12 @@
+openai
+anthropic
 streamlit
 pymongo
-pandas
-numpy
-torch
 transformers
+pytorch
+numpy
+pandas
 scikit-learn
 PyMuPDF
 certifi
 sentence-transformers
-anthropic
-openai

@@ -34,11 +34,39 @@ class APIKeyManager:
         except Exception:
             return False
 
+    def test_cborg_openai_key(self, api_key: str) -> bool:
+        """Test OpenAI API key with a minimal request."""
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key, base_url="https://api.cborg.lbl.gov")
+            client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": "Hi"}],
+                max_tokens=1
+            )
+            return True
+        except Exception:
+            return False
+
     def test_anthropic_key(self, api_key: str) -> bool:
         """Test Anthropic API key with a minimal request."""
         try:
             import anthropic
             client = anthropic.Anthropic(api_key=api_key)
+            client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=1,
+                messages=[{"role": "user", "content": "Hi"}]
+            )
+            return True
+        except Exception:
+            return False
+
+    def test_cborg_anthropic_key(self, api_key: str) -> bool:
+        """Test Anthropic API key with a minimal request."""
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key, base_url="https://api.cborg.lbl.gov")
             client.messages.create(
                 model="claude-3-haiku-20240307",
                 max_tokens=1,
@@ -56,7 +84,7 @@ class APIKeyManager:
         openai_key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
         if openai_key:
             # Check cache before making an API call
-            if st.session_state.tested_keys.get(openai_key) or self.test_openai_key(openai_key):
+            if st.session_state.tested_keys.get(openai_key) or self.test_openai_key(openai_key) or self.test_cborg_openai_key(openai_key):
                 api_keys["openai"] = openai_key
                 st.session_state.tested_keys[openai_key] = True
                 st.success("✅ OpenAI API key is valid.")
@@ -65,7 +93,7 @@ class APIKeyManager:
 
         anthropic_key = st.text_input("Anthropic API Key", type="password", placeholder="sk-ant-...")
         if anthropic_key:
-            if st.session_state.tested_keys.get(anthropic_key) or self.test_anthropic_key(anthropic_key):
+            if st.session_state.tested_keys.get(anthropic_key) or self.test_anthropic_key(anthropic_key) or self.test_cborg_anthropic_key(openai_key):
                 api_keys["anthropic"] = anthropic_key
                 st.session_state.tested_keys[anthropic_key] = True
                 st.success("✅ Anthropic API key is valid.")
