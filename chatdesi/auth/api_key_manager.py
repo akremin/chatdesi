@@ -26,7 +26,7 @@ class APIKeyManager:
             from openai import OpenAI
             client = OpenAI(api_key=api_key)
             client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-5-nano",
                 messages=[{"role": "user", "content": "Hi"}],
                 max_tokens=1
             )
@@ -40,9 +40,9 @@ class APIKeyManager:
             from openai import OpenAI
             client = OpenAI(api_key=api_key, base_url="https://api.cborg.lbl.gov")
             client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": "Hi"}],
-                max_tokens=1
+                model="gpt-5-nano",
+                messages=[{"role": "user", "content": "Respond with 1"}],
+                max_tokens=3
             )
             return True
         except Exception:

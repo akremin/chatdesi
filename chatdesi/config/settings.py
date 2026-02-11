@@ -22,24 +22,36 @@ class ModelConfig:
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     default_temperature: float = 0.7
     default_token_limit: int = 1500
-    
+
     # Available models for user selection
     available_models: Dict[str, Dict[str, str]] = None
-    
+
     def __post_init__(self):
         if self.available_models is None:
             self.available_models = {
-                "OpenAI GPT-4": {
+                "OpenAI GPT-5.2": {
                     "provider": "openai",
-                    "model_name": "gpt-4o",
-                    "display_name": "OpenAI GPT-4 Omni",
+                    "model_name": "gpt-5.2",
+                    "display_name": "OpenAI GPT-5.2",
                     "description": "Most capable OpenAI model"
                 },
-                "OpenAI GPT-3.5": {
-                    "provider": "openai", 
-                    "model_name": "gpt-3.5-turbo",
-                    "display_name": "OpenAI GPT-3.5 Turbo",
-                    "description": "Fast and efficient OpenAI model"
+                "OpenAI GPT-5": {
+                    "provider": "openai",
+                    "model_name": "gpt-5",
+                    "display_name": "OpenAI GPT-5",
+                    "description": "Good baseline OpenAI model"
+                },
+                "OpenAI GPT-5-mini": {
+                    "provider": "openai",
+                    "model_name": "gpt-5-mini",
+                    "display_name": "OpenAI GPT-5-mini",
+                    "description": "Small and efficient OpenAI model"
+                },
+                "OpenAI GPT-5-nano": {
+                    "provider": "openai",
+                    "model_name": "gpt-5-nano",
+                    "display_name": "OpenAI GPT-5-nano",
+                    "description": "Cheap and efficient OpenAI model"
                 },
                 "Claude 3.5 Sonnet": {
                     "provider": "anthropic",
@@ -49,7 +61,7 @@ class ModelConfig:
                 },
                 "Claude 3 Haiku": {
                     "provider": "anthropic",
-                    "model_name": "claude-3-haiku-20240307", 
+                    "model_name": "claude-3-haiku-20240307",
                     "display_name": "Claude 3 Haiku",
                     "description": "Fast and efficient Anthropic model"
                 }
@@ -76,13 +88,13 @@ class ExternalConfig:
 
 class Settings:
     """Main settings class that combines all configuration."""
-    
+
     def __init__(self):
         self.database = DatabaseConfig()
         self.model = ModelConfig()
         self.ui = UIConfig()
         self.external = ExternalConfig()
-    
+
     def get_tap_query_url(self, query: str, max_records: int) -> str:
         """Generate TAP service query URL."""
         formatted_query = query.replace(' ', '+')
