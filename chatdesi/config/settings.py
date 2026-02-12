@@ -20,7 +20,7 @@ class DatabaseConfig:
 class ModelConfig:
     """AI model configuration settings."""
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    default_temperature: float = 0.7
+    default_temperature: float = 0.3
     default_token_limit: int = 1500
 
     # Available models for user selection
@@ -79,12 +79,27 @@ class UIConfig:
 
 
 @dataclass
+class SystemPrompts:
+    """External service configuration."""
+    normal_system_prompt: str = ("You are a helpful cosmological research assistant specializing in the Dark Energy "
+                                 "Spectroscopic Instrument (DESI). You are knowledgeable, accurate, and concise. "
+                                 "If you do not know the answer to a question, say you don't know rather than making "
+                                 "something up.")
+    rag_system_prompt: str = (
+                "You are an expert cosmological research assistant specializing in the Dark Energy Spectroscopic Instrument (DESI). Your task is to answer user questions "
+                "by prioritizing the provided document context. If the context is sufficient, base your answer on it. "
+                "If the context is insufficient, you may use your general knowledge but you must state that the provided documents did not contain the answer. "
+                "When possible, synthesize information to provide a comprehensive summary. If you do not know the answer to a "
+                "question, say you don't know rather than making something up."
+            )
+
+
+@dataclass
 class ExternalConfig:
     """External service configuration."""
-    github_csv_url: str = "https://raw.githubusercontent.com/ethansyoo/DESI_Chatbot/main/columns.csv"
+    github_csv_url: str = "https://raw.githubusercontent.com/akremin/chatdesi/main/columns.csv"
     tap_service_url: str = "https://datalab.noirlab.edu/tap/sync"
-    feedback_form_url: str = "https://forms.gle/pVoAzEgFwKZ4zmXNA"
-
+    feedback_form_url: str = "https://forms.gle/y9q2hTBYCbAzyPy87"
 
 class Settings:
     """Main settings class that combines all configuration."""
@@ -94,6 +109,7 @@ class Settings:
         self.model = ModelConfig()
         self.ui = UIConfig()
         self.external = ExternalConfig()
+        self.prompts = SystemPrompts()
 
     def get_tap_query_url(self, query: str, max_records: int) -> str:
         """Generate TAP service query URL."""

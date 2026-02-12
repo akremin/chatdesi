@@ -40,7 +40,7 @@ Now, let's get the chatDESI code onto your computer.
 3.  **Clone the Code from Git:**
     * Copy the code from the repository by running this command in your terminal:
         ```bash
-        git clone [https://github.com/ethansyoo/desi.git](https://github.com/ethansyoo/desi.git) .
+        git clone [https://github.com/ethansyoo/desi.git](https://github.com/akremin/chatdesi.git) .
         ```
     * *(Note the `.` at the end—it tells Git to copy the files directly into your current folder.)*
 

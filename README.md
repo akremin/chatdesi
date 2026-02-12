@@ -34,7 +34,7 @@ First, clone the repository and set up the Python virtual environment.
 
 ```bash
 # Clone the repository
-git clone [https://github.com/ethansyoo/desi.git](https://github.com/ethansyoo/desi.git)
+git clone [https://github.com/akremin/chatdesi.git](https://github.com/akremin/chatdesi.git)
 cd desi
 
 # Create and activate a virtual environment

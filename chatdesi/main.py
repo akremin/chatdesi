@@ -32,12 +32,14 @@ except ImportError:
 def get_db_manager(connection_string: str) -> DatabaseManager:
     """Initializes and caches the database manager. No UI elements inside."""
     db_manager = DatabaseFactory.create_from_connection_string(connection_string)
+    pdfdb = db_manager.get_pdf_collection()
+    print(pdfdb)
     return db_manager
 
 @st.cache_resource
-def get_ai_client(provider: str, api_key: str, model_name: str) -> SimpleModelClient:
+def get_ai_client(provider: str, api_key: str, model_name: str, base_url: str = None) -> SimpleModelClient:
     """Initializes and caches the AI client. No UI elements inside."""
-    client = SimpleModelClient(provider, api_key, model_name)
+    client = SimpleModelClient(provider, api_key, model_name, base_url)
     return client
 
 # --- Main Application Logic ---
@@ -56,8 +58,8 @@ def main():
     render_admin_login()
 
     try:
-        connection_string = (st.secrets["mongo_admin_connection_string"] 
-                             if st.session_state['admin_logged_in'] 
+        connection_string = (st.secrets["mongo_admin_connection_string"]
+                             if st.session_state['admin_logged_in']
                              else st.secrets["mongo_general_connection_string"])
     except KeyError:
         st.error("Database connection string not found in secrets.toml.")
@@ -68,17 +70,18 @@ def main():
     if not api_keys:
         st.warning("Please enter at least one valid API key to proceed.")
         st.stop()
-    
+
     available_models = api_key_manager.get_available_models(api_keys)
     selected_model_key = api_key_manager.render_model_selector(available_models)
     if not selected_model_key:
         st.stop()
+    st.session_state['model_name'] = selected_model_key
 
     # --- CORRECTED INITIALIZATION LOGIC ---
-    
+
     # 1. Get the cached database manager
     db_manager = get_db_manager(connection_string)
-    
+
     # 2. Test connection and display UI feedback OUTSIDE the cached function
     #    Use session state to prevent re-testing on every script rerun.
     if 'db_connection_ok' not in st.session_state:
@@ -98,24 +101,28 @@ def main():
 
     # 3. Get the AI client
     selected_model_info = available_models[selected_model_key]
-    provider, model_name, api_key = (selected_model_info["provider"], 
-                                     selected_model_info["model_name"], 
-                                     api_keys[selected_model_info["provider"]])
-    
-    ai_client = get_ai_client(provider, api_key, model_name)
-    
+    provider, model_name = selected_model_info["provider"], selected_model_info["model_name"]
+    if f"cborg_{provider}" in api_keys:
+        api_key = api_keys[f"cborg_{provider}"]
+        base_url = "https://api.cborg.lbl.gov"
+    else:
+        api_key = api_keys[provider]
+        base_url = None
+
+    ai_client = get_ai_client(provider, api_key, model_name, base_url)
+
     # Display toast only once per client
     client_key = f"{provider}_{model_name}_connected"
     if client_key not in st.session_state:
         st.toast(f"✅ Connected to {provider.title()}")
         st.session_state[client_key] = True
-    
+
     # --- END OF CORRECTIONS ---
 
     # Initialize managers
     pdf_manager = PDFManager(db_manager)
     adql_manager = ADQLManager(db_manager)
-    
+
     render_main_interface(pdf_manager, adql_manager, ai_client)
 
 def render_admin_login():
@@ -167,28 +174,31 @@ def render_admin_panel(pdf_manager: PDFManager):
     except Exception as e:
         st.sidebar.error(f"Could not retrieve document list: {e}")
 
-@PerformanceMonitor.time_function()
+@PerformanceMonitor.time_function(show_in_sidebar=False)
 def render_main_interface(pdf_manager, adql_manager, ai_client):
     """Render the main interface with performance monitoring."""
     col_left, col_right = st.columns([4, 1])
-    
+
     with col_right:
         ui_components = UIComponents()
+        ui_components.render_relevant_documents([])
+
+    with col_left:
+        ui_components = UIComponents()
         user_settings = ui_components.render_sidebar_settings()
-        
-        st.sidebar.write("### 🤖 Current Model")
-        st.sidebar.info(f"**{ai_client.get_provider_name().title()}**\n{ai_client.model_name}")
-        
-        st.sidebar.write("### ⚡ Performance")
-        st.sidebar.caption("Function timing appears below")
-        
+
+        # st.sidebar.write("### 🤖 Current Model")
+        # st.sidebar.info(f"**{ai_client.get_provider_name().title()}**\n{ai_client.model_name}")
+
+        # st.sidebar.write("### ⚡ Performance")
+        # st.sidebar.caption("Function timing appears below")
+
         if st.session_state.get('admin_logged_in'):
             render_admin_panel(pdf_manager)
-    
-    with col_left:
+
         chat_interface = PracticalChatInterface(pdf_manager, ai_client)
         adql_interface = PracticalADQLInterface(adql_manager, ai_client)
-        
+
         if user_settings["mode"] == "Chat Mode":
             chat_interface.render(
                 reference_toggle=user_settings["reference_toggle"],
@@ -201,7 +211,7 @@ def render_main_interface(pdf_manager, adql_manager, ai_client):
                 temp_val=user_settings["temperature"],
                 max_records=user_settings["max_records"]
             )
-    
+
     ui_components.render_footer()
 
 def run_streamlit_app():

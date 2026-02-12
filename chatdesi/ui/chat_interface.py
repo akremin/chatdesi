@@ -17,14 +17,14 @@ from ..utils import ErrorHandler, PerformanceMonitor
 
 class ChatInterface:
     """Manages the chat mode interface."""
-    
+
     def __init__(self, pdf_manager: PDFManager, ai_client):
         self.pdf_manager = pdf_manager
         self.ai_client = ai_client
         self.ui = UIComponents()
         self.renderer = MathRenderer()
         self.session = SessionManager()
-    
+
     def render(self, reference_toggle: bool, token_limit: int, temp_val: float):
         """Render the complete chat interface."""
         self.session.initialize_chat_session()
@@ -44,9 +44,9 @@ class ChatInterface:
             if st.button("Clear Chat History"):
                 self.session.clear_chat_history()
                 st.rerun()
-            
+
             if "relevant_docs" in st.session_state and st.session_state["relevant_docs"]:
-                self.ui.render_relevant_documents_sidebar(st.session_state["relevant_docs"])
+                self.ui.render_relevant_documents(st.session_state["relevant_docs"])
 
 
     def _handle_new_message(self, user_input: str, reference_toggle: bool, token_limit: int, temp_val: float):
@@ -54,7 +54,7 @@ class ChatInterface:
         st.session_state.history.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.markdown(user_input)
-        
+
         relevant_docs = []
         if reference_toggle:
             with st.spinner("Finding relevant documents..."):
@@ -89,29 +89,24 @@ class PracticalChatInterface(ChatInterface):
     @PerformanceMonitor.time_function(show_in_sidebar=False)
     def _generate_chat_response(self, user_input, relevant_docs, token_limit, temp_val):
         """Generates a chat response with a prompt that adapts to the context."""
-        
-        system_prompt = "You are a helpful and creative astronomical research assistant. Your persona is knowledgeable and engaging."
+
+        system_prompt = settings.prompts.normal_system_prompt
         context = ""
 
         if relevant_docs:
-            system_prompt = (
-                "You are an expert astronomical research assistant. Your task is to answer user questions "
-                "by prioritizing the provided document context. If the context is sufficient, base your answer on it. "
-                "If the context is insufficient, you may use your general knowledge but you must state that the provided documents did not contain the answer. "
-                "When possible, synthesize information to provide a comprehensive and creative summary."
-            )
+            system_prompt = settings.prompts.rag_system_prompt
             context_snippets = "\n\n---\n\n".join(
                 [f"Source: {doc['metadata'].get('filename', 'Unknown')} (Chunk {doc['metadata'].get('chunk_index', 'N/A')})\n\n{doc['text']}" for doc in relevant_docs]
             )
             context = f"\n\n## Document Context:\n\n{context_snippets}"
-        
+
         final_system_prompt = system_prompt + context
-        
+
         messages = [{"role": "system", "content": final_system_prompt}]
-        
+
         for msg in st.session_state.history[-6:]:
             messages.append(msg)
-        
+
         return self.ai_client.chat_completion(
             messages=messages,
             max_tokens=token_limit,
